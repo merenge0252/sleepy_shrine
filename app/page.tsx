@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef } from "react"; 
+import { useState, useEffect, useRef } from "react"; // useRef は overlayRef のために残すことも可能ですが、今回は overlay も直接スタイルします
 
 // 遅刻や寝坊に関する運勢とコメント（敬語なし）
 const lateFortunesWithComments = [
@@ -61,36 +61,19 @@ const lateFortunesWithComments = [
   },
 ];
 
-// 確率に基づいて遅刻や寝坊に関する運勢（とコメント）を取得する関数（幅を持たせる）
 function getLateFortuneWithComment(probability: number): { fortune: string; comment: string } {
   let possibleFortunes = [];
-
-  if (probability >= 85) {
-    possibleFortunes.push(lateFortunesWithComments[0]); // 大吉
-    possibleFortunes.push(lateFortunesWithComments[1]); // 中吉
-  } else if (probability >= 65) {
-    possibleFortunes.push(lateFortunesWithComments[1]); // 中吉
-    possibleFortunes.push(lateFortunesWithComments[2]); // 吉
-  } else if (probability >= 45) {
-    possibleFortunes.push(lateFortunesWithComments[2]); // 吉
-    possibleFortunes.push(lateFortunesWithComments[3]); // 小吉
-  } else if (probability >= 25) {
-    possibleFortunes.push(lateFortunesWithComments[3]); // 小吉
-    possibleFortunes.push(lateFortunesWithComments[4]); // 末吉
-  } else if (probability >= 10) {
-    possibleFortunes.push(lateFortunesWithComments[4]); // 末吉
-    possibleFortunes.push(lateFortunesWithComments[5]); // 凶
-  } else {
-    possibleFortunes.push(lateFortunesWithComments[5]); // 凶
-    possibleFortunes.push(lateFortunesWithComments[6]); // 大凶
-  }
-
+  if (probability >= 85) possibleFortunes.push(lateFortunesWithComments[0], lateFortunesWithComments[1]);
+  else if (probability >= 65) possibleFortunes.push(lateFortunesWithComments[1], lateFortunesWithComments[2]);
+  else if (probability >= 45) possibleFortunes.push(lateFortunesWithComments[2], lateFortunesWithComments[3]);
+  else if (probability >= 25) possibleFortunes.push(lateFortunesWithComments[3], lateFortunesWithComments[4]);
+  else if (probability >= 10) possibleFortunes.push(lateFortunesWithComments[4], lateFortunesWithComments[5]);
+  else possibleFortunes.push(lateFortunesWithComments[5], lateFortunesWithComments[6]);
   const randomFortune = possibleFortunes[Math.floor(Math.random() * possibleFortunes.length)];
   const randomIndex = Math.floor(Math.random() * randomFortune.comments.length);
   return { fortune: randomFortune.fortune, comment: randomFortune.comments[randomIndex] };
 }
 
-// 現在時刻と予定時刻と所要時間から、間に合う確率を推定する関数
 function estimateArrivalProbability(currentTime: string, targetTime: string, requiredTime: number): number {
   const [currentH, currentM] = currentTime.split(":").map(Number);
   const [targetH, targetM] = targetTime.split(":").map(Number);
@@ -98,7 +81,6 @@ function estimateArrivalProbability(currentTime: string, targetTime: string, req
   const targetMinutes = targetH * 60 + targetM;
   const availableMinutes = targetMinutes - currentMinutes;
   const marginMinutes = availableMinutes - requiredTime;
-
   if (marginMinutes < 0) return 0;
   if (marginMinutes >= 60) return 90 + Math.random() * 9;
   if (marginMinutes >= 30) return 70 + Math.random() * 15;
@@ -109,96 +91,51 @@ function estimateArrivalProbability(currentTime: string, targetTime: string, req
 
 export default function Home() {
   const [currentTime, setCurrentTime] = useState<string>("");
-  const [targetTime, setTargetTime] = useState("10:30"); 
-  const [requiredTime, setRequiredTime] = useState<number>(15); 
+  const [targetTime, setTargetTime] = useState("10:30");
+  const [requiredTime, setRequiredTime] = useState<number>(15);
   const [resultText, setResultText] = useState<string | null>(null);
   const [resultProbability, setResultProbability] = useState<number | null>(null);
   const [probabilityColor, setProbabilityColor] = useState<React.CSSProperties>({});
   const [lateFortuneResult, setLateFortuneResult] = useState<{ fortune: string; comment: string } | null>(null);
   const [diagnosed, setDiagnosed] = useState(false);
-  const [arrivalProbForFortune, setArrivalProbForFortune] = useState<number | null>(null); 
-
-  const imgRef = useRef<HTMLImageElement>(null); 
-  const overlayRef = useRef<HTMLDivElement>(null); 
-
-  const adjustOverlay = () => {
-    if (imgRef.current && overlayRef.current) {
-      const imgRect = imgRef.current.getBoundingClientRect();
-      overlayRef.current.style.width = `${imgRect.width}px`;
-      overlayRef.current.style.height = `${imgRect.height}px`;
-      overlayRef.current.style.top = `${imgRect.top}px`;
-      overlayRef.current.style.left = `${imgRect.left}px`;
-    }
-  };
+  const [arrivalProbForFortune, setArrivalProbForFortune] = useState<number | null>(null);
 
   useEffect(() => {
     const now = new Date();
     const hours = String(now.getHours()).padStart(2, "0");
     const minutes = String(now.getMinutes()).padStart(2, "0");
     setCurrentTime(`${hours}:${minutes}`);
-
-    const currentImgRef = imgRef.current; 
-
-    const handleLoad = () => {
-      adjustOverlay();
-    };
-
-    if (currentImgRef) {
-      if (currentImgRef.complete) { 
-        handleLoad();
-      } else {
-        currentImgRef.addEventListener('load', handleLoad);
-      }
-    }
-    
-    window.addEventListener('resize', adjustOverlay);
-
-    return () => {
-      if (currentImgRef) {
-        currentImgRef.removeEventListener('load', handleLoad);
-      }
-      window.removeEventListener('resize', adjustOverlay);
-    };
-  }, []); 
+    // 背景画像とオーバーレイの動的調整ロジックは削除
+  }, []);
 
   const getProbabilityColor = (probability: number): React.CSSProperties => {
     let style: React.CSSProperties = {};
-    if (probability === 0) {
-      style.color = "black";
-    } else if (probability >= 99.9) { 
-      style = { ...style, fontSize: "3em", fontWeight: "bold", color: "transparent", WebkitBackgroundClip: "text", backgroundImage: "linear-gradient(45deg, red, orange, yellow, green, cyan, blue, purple, magenta, red)" } as React.CSSProperties;
-    } else if (probability >= 80) { 
-      style = { ...style, fontSize: "3em", fontWeight: "bold", color: "transparent", WebkitBackgroundClip: "text", backgroundImage: "linear-gradient(to right, #BF953F, #FCF6BA, #B38728, #FBF5B7, #AA771C)" } as React.CSSProperties;
-    } else if (probability >= 60) {
-      style.color = "red"; style.fontWeight = "bold";
-    } else if (probability >= 40) {
-      style.color = "#FF69B4"; style.fontWeight = "bold";
-    } else if (probability >= 20) {
-      style.color = "yellow"; style.fontWeight = "bold";
-    } else if (probability >= 5) {
-      style.color = "green"; style.fontWeight = "bold";
-    } else {
-      style.color = "blue"; style.fontWeight = "bold";
-    }
+    if (probability === 0) style.color = "black";
+    else if (probability >= 99.9) style = { ...style, fontSize: "3em", fontWeight: "bold", color: "transparent", WebkitBackgroundClip: "text", backgroundImage: "linear-gradient(45deg, red, orange, yellow, green, cyan, blue, purple, magenta, red)" } as React.CSSProperties;
+    else if (probability >= 80) style = { ...style, fontSize: "3em", fontWeight: "bold", color: "transparent", WebkitBackgroundClip: "text", backgroundImage: "linear-gradient(to right, #BF953F, #FCF6BA, #B38728, #FBF5B7, #AA771C)" } as React.CSSProperties;
+    else if (probability >= 60) { style.color = "red"; style.fontWeight = "bold"; }
+    else if (probability >= 40) { style.color = "#FF69B4"; style.fontWeight = "bold"; }
+    else if (probability >= 20) { style.color = "yellow"; style.fontWeight = "bold"; }
+    else if (probability >= 5) { style.color = "green"; style.fontWeight = "bold"; }
+    else { style.color = "blue"; style.fontWeight = "bold"; }
     return style;
   };
 
   function handleDiagnose() {
     const arrivalProbability = estimateArrivalProbability(currentTime, targetTime, requiredTime);
-    setArrivalProbForFortune(arrivalProbability); 
-    const latenessProbability = 100 - arrivalProbability; 
-    const colorStyle = getProbabilityColor(latenessProbability); 
+    setArrivalProbForFortune(arrivalProbability);
+    const latenessProbability = 100 - arrivalProbability;
+    const colorStyle = getProbabilityColor(latenessProbability);
     setResultText(`⏰ 現在時刻：${currentTime}\n⏰ 予定時刻：${targetTime}\n\n⏳ 所要時間：${requiredTime}分\n\nあなたが遅刻する確率は… ` );
-    setResultProbability(latenessProbability); 
-    setProbabilityColor(colorStyle); 
+    setResultProbability(latenessProbability);
+    setProbabilityColor(colorStyle);
     setDiagnosed(true);
-    setLateFortuneResult(null); 
-    console.log("probabilityColor ステート:", colorStyle);
+    setLateFortuneResult(null);
   }
 
   function handleDrawProbabilityFortune() {
-    if (diagnosed && arrivalProbForFortune !== null) { 
-      setLateFortuneResult(getLateFortuneWithComment(arrivalProbForFortune)); 
+    if (diagnosed && arrivalProbForFortune !== null) {
+      setLateFortuneResult(getLateFortuneWithComment(arrivalProbForFortune));
     } else {
       setLateFortuneResult({ fortune: "未診断", comment: "先に診断を受けてください。" });
     }
@@ -206,46 +143,38 @@ export default function Home() {
 
   return (
     <>
-      <div className="background-wrapper"> 
-        <img 
-          ref={imgRef} 
-          src="/shrine-background.png" 
-          alt="背景" 
-          className="actual-background-image"
-        />
-        <div ref={overlayRef} className="semi-transparent-overlay-on-image"></div>
-      </div>
+      {/* 背景画像を表示するためのコンテナ */}
+      <div className="background-image-container"></div>
+      {/* 半透明オーバーレイ */}
+      <div className="semi-transparent-overlay-on-image"></div>
+
       <style jsx global>{`
         html {
           overflow-y: scroll;
         }
 
-        .background-wrapper { 
+        .background-image-container {
           position: fixed;
           top: 0;
           left: 0;
           width: 100vw;
           height: 100vh;
-          display: flex; 
-          justify-content: center;
-          align-items: center;
-          z-index: -2; 
-          overflow: hidden; 
+          background-image: url('/shrine-background.png'); /* 画像パスを確認 */
+          background-size: auto 100%; /* 高さを画面に合わせ、幅はアスペクト比維持 */
+          background-position: center center; /* 中央表示 */
+          background-repeat: no-repeat;
+          z-index: -2; /* mainコンテンツより後ろ */
         }
 
-        .actual-background-image { 
-          display: block; 
-          max-width: 100%;
-          max-height: 100%;
-          object-fit: contain; 
-          z-index: 1; 
-        }
-
-        .semi-transparent-overlay-on-image { 
-          position: absolute; 
-          background-color: rgba(0, 0, 0, 0.15); 
-          z-index: 2; 
-          pointer-events: none; 
+        .semi-transparent-overlay-on-image {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100vw;
+          height: 100vh;
+          background-color: rgba(0, 0, 0, 0.15);
+          z-index: -1; /* 背景画像より手前、mainコンテンツより後ろ */
+          pointer-events: none;
         }
 
         body {
@@ -253,25 +182,26 @@ export default function Home() {
           display: flex;
           flex-direction: column;
           align-items: center;
-          justify-content: flex-start; 
+          justify-content: flex-start;
           box-sizing: border-box;
-          padding-top: 0; 
-          margin: 0; 
+          padding-top: 0;
+          margin: 0;
+          /* bodyの背景色は透明または不要に */
         }
 
         main {
-          padding: 2rem; 
-          padding-top: 5vh; 
-          padding-bottom: 5vh; 
+          padding: 2rem;
+          padding-top: 5vh;
+          padding-bottom: 5vh;
           border-radius: 10px;
           width: 90%;
-          max-width: 400px; 
+          max-width: 400px;
           text-align: center;
           font-family: sans-serif;
           box-sizing: border-box;
-          color: white; 
-          position: relative; 
-          z-index: 0; 
+          color: white;
+          position: relative; /* z-indexを有効にするため */
+          z-index: 0; /* オーバーレイより手前 */
         }
 
         h1 {
@@ -279,7 +209,7 @@ export default function Home() {
           margin-bottom: 1rem;
         }
 
-        p { 
+        p {
           font-size: 1rem;
           margin-bottom: 1rem;
           font-weight: normal;
@@ -304,27 +234,23 @@ export default function Home() {
         input, select {
           padding: 0.8rem;
           font-size: 1rem;
-          border: 1px solid #aaa; 
+          border: 1px solid #aaa;
           border-radius: 4px;
           width: 80%;
           max-width: 300px;
           box-sizing: border-box;
           margin-bottom: 0.8rem;
-          color: white; 
-          background-color: transparent; 
-        }
-        
-        input[type="time"]::-webkit-calendar-picker-indicator {
-          filter: invert(1); 
-        }
-        select {
-          /* スタイル調整 */
+          color: white;
+          background-color: transparent;
         }
 
-        /* 診断するボタンのデフォルトスタイル */
+        input[type="time"]::-webkit-calendar-picker-indicator {
+          filter: invert(1);
+        }
+
         button {
           background-color: #ff4d4f; /* 赤色 */
-          color: white; 
+          color: white;
           border: none;
           padding: 1rem 2rem;
           border-radius: 8px;
@@ -338,27 +264,24 @@ export default function Home() {
           opacity: 0.9;
         }
 
-        /* ★ 運勢を見るボタンの専用スタイル */
         .btn-fortune {
           background-color: #87CEEB; /* 水色 (SkyBlue) */
-          /* 他のスタイルは汎用buttonから継承されるか、必要なら上書き */
         }
         .btn-fortune:hover {
-          opacity: 0.85; /* ホバー時の透明度を少し調整 */
+          opacity: 0.85;
         }
-
 
         .result-container {
           margin-top: 2rem;
           text-align: center;
         }
-        .result-container h2 { 
-           margin-bottom: 0.5rem; 
+        .result-container h2 {
+           margin-bottom: 0.5rem;
         }
 
-        .result-probability { 
-          font-size: 2em; 
-          font-weight: bold; 
+        .result-probability {
+          font-size: 2em;
+          font-weight: bold;
           display: block;
           margin-top: 0.5rem;
         }
@@ -368,22 +291,22 @@ export default function Home() {
           text-align: center;
         }
 
-        .fortune-title { 
+        .fortune-title {
           font-size: 1.3rem;
           font-weight: bold;
           margin-bottom: 0.5rem;
         }
 
         .fortune-result-main {
-          font-size: 2.2em; 
+          font-size: 2.2em;
           font-weight: bold;
-          margin-bottom: 0.5rem; 
+          margin-bottom: 0.5rem;
         }
 
-        .fortune-text { 
+        .fortune-text {
           font-size: 1.1rem;
           font-weight: normal;
-          overflow-wrap: break-word; 
+          overflow-wrap: break-word;
         }
       `}</style>
       <main>
@@ -411,7 +334,6 @@ export default function Home() {
           </select>
         </div>
 
-        {/* 「診断する」ボタンにはクラス名なし (デフォルトスタイル適用) */}
         <button onClick={handleDiagnose}>🚨 診断する</button>
 
         {diagnosed && resultText && resultProbability !== null && (
@@ -422,7 +344,6 @@ export default function Home() {
                 {resultProbability.toFixed(1)}%
               </span>
             </p>
-            {/* ★ 「運勢を見る」ボタンにクラス名を追加 */}
             <button onClick={handleDrawProbabilityFortune} className="btn-fortune">🙏 運勢を見る</button>
           </div>
         )}
